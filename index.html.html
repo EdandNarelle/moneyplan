@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Money Plan">
+<meta name="theme-color" content="#1a7a4a">
+<link rel="manifest" href="manifest.json">
+<title>Ed &amp; Narelle — Money Plan</title>
+<style>
+:root {
+  --green: #1a7a4a;
+  --green-light: #e8f5ee;
+  --green-mid: #2d9e60;
+  --ink: #1a1a1a;
+  --ink-mid: #555;
+  --ink-light: #999;
+  --bg: #f7f7f5;
+  --white: #fff;
+  --border: #e2e2de;
+  --red: #c0392b;
+  --amber: #d97706;
+  --r: 10px;
+  --rs: 7px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--ink); max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; }
+
+header { background: var(--green); color: white; padding: 10px 16px 8px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
+header h1 { font-size: 11px; font-weight: 500; opacity: 0.75; letter-spacing: 0.04em; text-transform: uppercase; }
+header h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+.month-tag { font-size: 11px; opacity: 0.65; text-align: right; }
+
+.tabs { display: flex; background: var(--white); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.tab { flex: 1; padding: 8px 4px 6px; text-align: center; font-size: 11px; font-weight: 500; color: var(--ink-light); cursor: pointer; border-bottom: 2px solid transparent; user-select: none; }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+.tab-icon { font-size: 16px; display: block; margin-bottom: 1px; }
+
+.panels { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.panel { display: none; padding: 10px 12px; }
+.panel.active { display: block; }
+
+.section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 6px; }
+
+.amount-wrap { background: var(--white); border-radius: var(--r); border: 1px solid var(--border); padding: 10px 12px; margin-bottom: 8px; text-align: center; cursor: pointer; transition: border-color 0.15s; }
+.amount-wrap:focus-within { border-color: var(--green); }
+.amount-display { font-size: 38px; font-weight: 300; letter-spacing: -0.03em; color: var(--ink); line-height: 1; display: flex; align-items: center; justify-content: center; }
+.amount-display .currency { font-size: 24px; color: var(--ink-mid); align-self: flex-start; margin-top: 4px; }
+.amount-display input { border: none; outline: none; background: transparent; font-size: 38px; font-weight: 300; letter-spacing: -0.03em; color: var(--ink); width: 150px; font-family: inherit; padding: 0; }
+.amount-display input::placeholder { color: var(--ink-light); }
+.amount-hint { font-size: 11px; color: var(--ink-light); margin-top: 3px; }
+
+.field-input { width: 100%; padding: 9px 12px; border-radius: var(--rs); border: 1px solid var(--border); background: var(--white); font-size: 15px; color: var(--ink); outline: none; -webkit-appearance: none; margin-bottom: 7px; font-family: inherit; }
+.field-input:focus { border-color: var(--green); }
+.field-input::placeholder { color: var(--ink-light); }
+
+.cat-section { margin-bottom: 8px; }
+.cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+.cat-btn { padding: 7px 3px 6px; border-radius: var(--rs); border: 1px solid var(--border); background: var(--white); font-size: 10px; font-weight: 500; text-align: center; cursor: pointer; color: var(--ink-mid); user-select: none; line-height: 1.3; }
+.cat-btn .cat-icon { font-size: 15px; display: block; margin-bottom: 2px; }
+.cat-btn.selected { border-color: var(--green); background: var(--green-light); color: var(--green); }
+.cat-btn:active { transform: scale(0.96); }
+
+.submit-btn { width: 100%; padding: 13px; border-radius: var(--r); background: var(--green); color: white; font-size: 15px; font-weight: 600; border: none; cursor: pointer; transition: background 0.15s; }
+.submit-btn:active { background: #155e38; }
+
+.toast { margin-top: 7px; padding: 8px 12px; border-radius: var(--rs); font-size: 12px; font-weight: 500; text-align: center; opacity: 0; transition: opacity 0.3s; background: var(--green-light); color: var(--green); min-height: 32px; }
+.toast.show { opacity: 1; }
+.toast.error { background: #fde8e8; color: var(--red); }
+
+/* BUDGET */
+.budget-total { background: var(--green); color: white; border-radius: var(--r); padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.budget-total-label { font-size: 11px; opacity: 0.85; }
+.budget-total-val { font-size: 18px; font-weight: 600; }
+.budget-refresh { font-size: 11px; color: var(--green); cursor: pointer; font-weight: 600; }
+.budget-list { display: flex; flex-direction: column; gap: 6px; }
+.budget-card { background: var(--white); border-radius: var(--r); border: 1px solid var(--border); padding: 9px 12px; }
+.budget-row-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.budget-cat-name { font-size: 13px; font-weight: 600; }
+.budget-row-mid { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.budget-spent-txt { font-size: 12px; color: var(--ink-mid); }
+.budget-spent-txt span { font-weight: 600; color: var(--ink); }
+.budget-left { font-size: 12px; font-weight: 600; }
+.budget-left.ok { color: var(--green); }
+.budget-left.warn { color: var(--amber); }
+.budget-left.over { color: var(--red); }
+.budget-pill { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 20px; margin-left: 4px; }
+.pill-ok { background: var(--green-light); color: var(--green); }
+.pill-over { background: #fde8e8; color: var(--red); }
+.pill-warn { background: #fef3c7; color: var(--amber); }
+.progress-bar { height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 2px; }
+.fill-ok { background: var(--green-mid); }
+.fill-warn { background: var(--amber); }
+.fill-over { background: var(--red); }
+.budget-loading { text-align: center; padding: 24px; color: var(--ink-light); font-size: 13px; }
+
+/* RECENT */
+.recent-list { display: flex; flex-direction: column; gap: 1px; }
+.recent-card { background: var(--white); padding: 9px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+.recent-card:first-child { border-radius: var(--r) var(--r) 0 0; }
+.recent-card:last-child { border-radius: 0 0 var(--r) var(--r); border-bottom: none; }
+.recent-card:only-child { border-radius: var(--r); border-bottom: none; }
+.recent-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.recent-info { flex: 1; min-width: 0; }
+.recent-shop { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-meta { font-size: 11px; color: var(--ink-light); }
+.recent-note { font-size: 10px; color: var(--ink-light); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.recent-amt { font-size: 14px; font-weight: 600; }
+.del-btn { font-size: 10px; color: var(--red); font-weight: 600; cursor: pointer; padding: 2px 5px; border-radius: 4px; border: 1px solid #fca5a5; background: #fde8e8; }
+
+.empty-state { text-align: center; padding: 36px 20px; color: var(--ink-light); font-size: 13px; }
+.empty-icon { font-size: 30px; margin-bottom: 8px; }
+
+/* SETUP */
+.setup-card { background: var(--white); border-radius: var(--r); border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
+.setup-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+.setup-card p { font-size: 12px; color: var(--ink-mid); line-height: 1.5; margin-bottom: 8px; }
+.setup-input { width: 100%; padding: 9px 11px; border-radius: var(--rs); border: 1px solid var(--border); font-size: 13px; color: var(--ink); outline: none; margin-bottom: 7px; font-family: inherit; }
+.setup-input:focus { border-color: var(--green); }
+.setup-btn { padding: 9px 16px; border-radius: var(--rs); background: var(--green); color: white; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+.setup-btn.secondary { background: var(--white); color: var(--green); border: 1px solid var(--green); margin-left: 6px; }
+.step-number { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: var(--green); color: white; font-size: 11px; font-weight: 700; align-items: center; justify-content: center; margin-right: 6px; vertical-align: middle; }
+.connected-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--green-light); color: var(--green); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+
+.confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+.confirm-overlay.show { display: flex; }
+.confirm-box { background: var(--white); border-radius: var(--r); padding: 18px; width: 100%; max-width: 300px; }
+.confirm-box h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.confirm-box p { font-size: 13px; color: var(--ink-mid); margin-bottom: 14px; line-height: 1.4; }
+.confirm-btns { display: flex; gap: 8px; }
+.confirm-btns button { flex: 1; padding: 11px; border-radius: var(--rs); font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+.btn-cancel { background: var(--bg); color: var(--ink); }
+.btn-delete { background: var(--red); color: white; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Ed &amp; Narelle</h1>
+    <h2>Money Plan</h2>
+  </div>
+  <div class="month-tag" id="header-month"></div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('add',this)"><span class="tab-icon">＋</span>Add</div>
+  <div class="tab" onclick="switchTab('budget',this)"><span class="tab-icon">📊</span>Budget</div>
+  <div class="tab" onclick="switchTab('recent',this)"><span class="tab-icon">🕐</span>Recent</div>
+  <div class="tab" onclick="switchTab('setup',this)"><span class="tab-icon">⚙️</span>Setup</div>
+</div>
+
+<div class="panels">
+
+<!-- ADD PANEL -->
+<div class="panel active" id="panel-add">
+  <div class="amount-wrap" onclick="document.getElementById('amt-input').focus()">
+    <div class="amount-display">
+      <span class="currency">£</span>
+      <input type="text" id="amt-input" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" placeholder="0"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        oninput="onAmtInput(this.value)">
+    </div>
+    <div class="amount-hint" id="amt-hint">tap to enter amount</div>
+  </div>
+  <input class="field-input" type="text" id="shop-input" placeholder="Shop or payee (e.g. Lidl)" autocomplete="off" autocorrect="off" spellcheck="false">
+  <input class="field-input" type="text" id="note-input" placeholder="Note / comment (optional)" autocomplete="off" autocorrect="off" spellcheck="false">
+  <div class="cat-section">
+    <div class="section-label">Category</div>
+    <div class="cat-grid" id="cat-grid"></div>
+  </div>
+  <button class="submit-btn" onclick="addExpense()">Add expense</button>
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- BUDGET PANEL -->
+<div class="panel" id="panel-budget">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div class="section-label" style="margin-bottom:0" id="budget-month-label"></div>
+    <span class="budget-refresh" onclick="loadBudgetFromSheet()">↻ Refresh</span>
+  </div>
+  <div id="budget-total" class="budget-total" style="display:none">
+    <div><div class="budget-total-label">Spent</div><div class="budget-total-val" id="budget-spent">£0</div></div>
+    <div style="text-align:center"><div class="budget-total-label">Left</div><div class="budget-total-val" id="budget-left">£0</div></div>
+    <div style="text-align:right"><div class="budget-total-label">Budget</div><div class="budget-total-val" id="budget-target">£0</div></div>
+  </div>
+  <div class="budget-list" id="budget-list"></div>
+</div>
+
+<!-- RECENT PANEL -->
+<div class="panel" id="panel-recent">
+  <div class="section-label">Recent entries</div>
+  <div id="recent-list"></div>
+</div>
+
+<!-- SETUP PANEL -->
+<div class="panel" id="panel-setup">
+  <div class="setup-card">
+    <h3><span class="step-number">1</span>Paste &amp; save script</h3>
+    <p>In your Google Sheet: <strong>Extensions → Apps Script</strong>. Delete existing code, paste the new script, save.</p>
+    <button class="setup-btn" onclick="showToast('Download the apps-script.js file from Claude')">Get script</button>
+  </div>
+  <div class="setup-card">
+    <h3><span class="step-number">2</span>Run setup once</h3>
+    <p>In Apps Script, select <strong>setupBudgetSheet</strong> from the function dropdown and click <strong>Run</strong>. This creates your Budgets tab in the sheet.</p>
+  </div>
+  <div class="setup-card">
+    <h3><span class="step-number">3</span>Deploy &amp; paste URL</h3>
+    <p><strong>Deploy → New deployment → Web app</strong><br>Execute as: Me · Access: Anyone<br>Authorise, then paste URL below.</p>
+    <input class="setup-input" type="url" id="sheet-url" placeholder="https://script.google.com/macros/s/...">
+    <div>
+      <button class="setup-btn" onclick="saveUrl()">Save</button>
+      <button class="setup-btn secondary" onclick="testConnection()">Test</button>
+    </div>
+    <div id="connection-status" style="margin-top:8px;font-size:12px;"></div>
+  </div>
+  <div class="setup-card">
+    <h3><span class="step-number">4</span>Home screen</h3>
+    <p>Open GitHub Pages URL in Chrome → three dots → <strong>Add to Home Screen</strong>. Both users use the same URL.</p>
+  </div>
+</div>
+
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Delete entry?</h3>
+    <p id="confirm-text"></p>
+    <div class="confirm-btns">
+      <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-delete" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var amtStr = '';
+var selectedCat = '';
+var pendingDelete = null;
+var CATEGORIES = [];
+var BUDGET = [];
+
+var DEFAULT_CATEGORIES = [
+  {name:'Food',icon:'🛒'},{name:'Fast food',icon:'🍔'},{name:'Fuel',icon:'⛽'},
+  {name:'Clothes',icon:'👕'},{name:'Household/Personal',icon:'🏠'},{name:'Maintenance',icon:'🔧'},
+  {name:'Utilities/Insurance',icon:'💡'},{name:'Subscriptions',icon:'📱'},{name:'Gifts/Collection',icon:'🎁'},
+  {name:'Haircuts',icon:'✂️'},{name:'Parking',icon:'🅿️'},{name:'Other/Unplanned',icon:'📦'},
+  {name:'UBT Bill',icon:'📄'},{name:'BGT',icon:'📄'},{name:'Council Tax',icon:'🏛️'},
+  {name:'Mortgage',icon:'🏡'},{name:'OneSchool Transfer',icon:'🎓'},
+];
+
+var DEFAULT_BUDGET = [
+  {cat:'Food',target:800},{cat:'Fast food',target:60},{cat:'Fuel',target:170},
+  {cat:'Clothes',target:115},{cat:'Household/Personal',target:195},{cat:'Maintenance',target:25},
+  {cat:'Utilities/Insurance',target:587.27},{cat:'Subscriptions',target:15},{cat:'Gifts/Collection',target:310},
+  {cat:'Haircuts',target:45},{cat:'Parking',target:0},{cat:'Other/Unplanned',target:85},
+  {cat:'UBT Bill',target:100},{cat:'BGT',target:46.66},{cat:'Council Tax',target:386},
+  {cat:'Mortgage',target:2194.08},{cat:'OneSchool Transfer',target:100},
+];
+
+var localExpenses = JSON.parse(localStorage.getItem('mp_expenses')||'[]');
+function saveLocal(){ localStorage.setItem('mp_expenses', JSON.stringify(localExpenses.slice(0,300))); }
+function getSheetUrl(){ return localStorage.getItem('mp_sheet_url'); }
+function getCurrentMonth(){ return new Date().toLocaleString('en-GB',{month:'long',year:'numeric'}); }
+function getSheetMonthName(){ return new Date().toLocaleString('en-GB',{month:'short',year:'numeric'}); }
+
+function init(){
+  document.getElementById('header-month').textContent = getCurrentMonth();
+  document.getElementById('budget-month-label').textContent = getCurrentMonth();
+  var u = getSheetUrl();
+  if(u) document.getElementById('sheet-url').value = u;
+  CATEGORIES = DEFAULT_CATEGORIES;
+  BUDGET = DEFAULT_BUDGET;
+  loadBudgetsFromSheet();
+  renderCatGrid();
+  renderRecent();
+}
+
+function loadBudgetsFromSheet(){
+  var url = getSheetUrl();
+  if(!url) return;
+  fetch(url+'?action=budgets')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.budgets && data.budgets.length > 0){
+        CATEGORIES = data.budgets.map(function(b){return {name:b.category, icon:b.icon||'📦'};});
+        BUDGET = data.budgets.map(function(b){return {cat:b.category, target:parseFloat(b.target)||0};});
+        localStorage.setItem('mp_budgets', JSON.stringify(data.budgets));
+        renderCatGrid();
+      }
+    })
+    .catch(function(){
+      var cached = localStorage.getItem('mp_budgets');
+      if(cached){
+        var b = JSON.parse(cached);
+        CATEGORIES = b.map(function(x){return {name:x.category, icon:x.icon||'📦'};});
+        BUDGET = b.map(function(x){return {cat:x.category, target:parseFloat(x.target)||0};});
+        renderCatGrid();
+      }
+    });
+}
+
+function renderCatGrid(){
+  var g = document.getElementById('cat-grid');
+  g.innerHTML='';
+  CATEGORIES.forEach(function(c){
+    var b = document.createElement('div');
+    b.className='cat-btn'+(selectedCat===c.name?' selected':'');
+    b.innerHTML='<span class="cat-icon">'+c.icon+'</span>'+c.name;
+    b.onclick=function(){selectCat(c.name,b);};
+    g.appendChild(b);
+  });
+}
+
+function selectCat(name,el){
+  selectedCat=name;
+  document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('selected');});
+  el.classList.add('selected');
+  updateHint();
+}
+
+function updateHint(){
+  var h=document.getElementById('amt-hint');
+  if(selectedCat&&amtStr) h.textContent=selectedCat;
+  else if(selectedCat) h.textContent=selectedCat+' — enter amount';
+  else h.textContent='tap to enter amount';
+}
+
+function onAmtInput(val){
+  val=val.replace(/[^0-9.]/g,'');
+  var p=val.split('.');
+  if(p.length>2) val=p[0]+'.'+p.slice(1).join('');
+  if(p[1]&&p[1].length>2) val=p[0]+'.'+p[1].slice(0,2);
+  document.getElementById('amt-input').value=val;
+  amtStr=val;
+  updateHint();
+}
+
+function showToast(msg,isError){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast show'+(isError?' error':'');
+  setTimeout(function(){t.className='toast';},3000);
+}
+
+function addExpense(){
+  var amt=parseFloat(amtStr);
+  if(!amt||amt<=0){showToast('Enter an amount first',true);return;}
+  if(!selectedCat){showToast('Pick a category first',true);return;}
+  var shop=document.getElementById('shop-input').value.trim();
+  var note=document.getElementById('note-input').value.trim();
+  var ts=Date.now();
+  var entry={date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),shop:shop||selectedCat,amount:amt,category:selectedCat,notes:note,ts:ts};
+  localExpenses.unshift(entry);
+  saveLocal();
+  sendToSheet(entry);
+  showToast('✓ £'+amt.toFixed(2)+' — '+selectedCat);
+  amtStr='';
+  document.getElementById('amt-input').value='';
+  document.getElementById('shop-input').value='';
+  document.getElementById('note-input').value='';
+  selectedCat='';
+  renderCatGrid();
+  updateHint();
+}
+
+function sendToSheet(entry){
+  var url=getSheetUrl();
+  if(!url) return;
+  fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({shop:entry.shop,amount:entry.amount,category:entry.category,notes:entry.notes,ts:entry.ts})
+  }).catch(function(){});
+}
+
+function deleteFromSheet(entry){
+  var url=getSheetUrl();
+  if(!url) return;
+  fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'delete',sheetName:getSheetMonthName(),ts:String(entry.ts)})
+  }).catch(function(){});
+}
+
+function askDelete(idx){
+  var e=localExpenses[idx];
+  if(!e) return;
+  pendingDelete=idx;
+  document.getElementById('confirm-text').textContent=e.shop+' — £'+e.amount.toFixed(2)+' ('+e.category+')';
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+
+function closeConfirm(){ document.getElementById('confirm-overlay').classList.remove('show'); pendingDelete=null; }
+
+function confirmDelete(){
+  if(pendingDelete===null) return;
+  var entry=localExpenses[pendingDelete];
+  deleteFromSheet(entry);
+  localExpenses.splice(pendingDelete,1);
+  saveLocal();
+  closeConfirm();
+  renderRecent();
+  showToast('Entry deleted');
+}
+
+function renderRecent(){
+  var list=document.getElementById('recent-list');
+  if(localExpenses.length===0){
+    list.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No entries yet.</div>';
+    return;
+  }
+  list.innerHTML='';
+  var wrap=document.createElement('div');
+  wrap.className='recent-list';
+  localExpenses.slice(0,50).forEach(function(e,idx){
+    var cat=CATEGORIES.find(function(c){return c.name===e.category;});
+    var icon=cat?cat.icon:'📦';
+    var item=document.createElement('div');
+    item.className='recent-card';
+    item.innerHTML='<div class="recent-icon">'+icon+'</div>'+
+      '<div class="recent-info">'+
+        '<div class="recent-shop">'+e.shop+'</div>'+
+        '<div class="recent-meta">'+e.category+' · '+e.date+'</div>'+
+        (e.notes?'<div class="recent-note">'+e.notes+'</div>':'')+
+      '</div>'+
+      '<div class="recent-right">'+
+        '<div class="recent-amt">£'+e.amount.toFixed(2)+'</div>'+
+        '<div class="del-btn" onclick="askDelete('+idx+')">Delete</div>'+
+      '</div>';
+    wrap.appendChild(item);
+  });
+  list.appendChild(wrap);
+}
+
+function loadBudgetFromSheet(){
+  var url=getSheetUrl();
+  var list=document.getElementById('budget-list');
+  if(!url){renderBudgetFromLocal();return;}
+  list.innerHTML='<div class="budget-loading">Loading…</div>';
+  var m=encodeURIComponent(getSheetMonthName());
+  fetch(url+'?month='+m)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var actuals={};
+      (data.rows||[]).forEach(function(row){
+        var amt=parseFloat(row.amount)||0;
+        actuals[row.category]=(actuals[row.category]||0)+amt;
+      });
+      renderBudgetRows(actuals);
+    })
+    .catch(function(){renderBudgetFromLocal();});
+}
+
+function renderBudgetFromLocal(){
+  var now=new Date();
+  var actuals={};
+  localExpenses.forEach(function(e){
+    var d=new Date(e.ts);
+    if(d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear())
+      actuals[e.category]=(actuals[e.category]||0)+e.amount;
+  });
+  renderBudgetRows(actuals);
+}
+
+function renderBudgetRows(actuals){
+  var list=document.getElementById('budget-list');
+  list.innerHTML='';
+  var totalSpent=0,totalTarget=0;
+  BUDGET.forEach(function(b){
+    var actual=actuals[b.cat]||0;
+    totalSpent+=actual; totalTarget+=b.target;
+    var left=b.target-actual;
+    var pct=b.target>0?Math.min(100,Math.round(actual/b.target*100)):0;
+    var over=b.target>0&&actual>b.target;
+    var warn=b.target>0&&pct>=80&&!over;
+    var fc=over?'fill-over':(warn?'fill-warn':'fill-ok');
+    var pc=over?'pill-over':(warn?'pill-warn':'pill-ok');
+    var pt=over?'over':(warn?'nearly':'ok');
+    var leftClass=over?'over':(warn?'warn':'ok');
+    var leftTxt=over?'−£'+Math.abs(left).toFixed(2)+' over':'£'+left.toFixed(2)+' left';
+    var card=document.createElement('div');
+    card.className='budget-card';
+    card.innerHTML=
+      '<div class="budget-row-top">'+
+        '<span class="budget-cat-name">'+b.cat+'</span>'+
+        (b.target>0?'<span class="budget-pill '+pc+'">'+pt+'</span>':'')+
+      '</div>'+
+      '<div class="budget-row-mid">'+
+        '<span class="budget-spent-txt"><span>£'+actual.toFixed(2)+'</span> of £'+(b.target%1?b.target.toFixed(2):b.target)+'</span>'+
+        '<span class="budget-left '+leftClass+'">'+leftTxt+'</span>'+
+      '</div>'+
+      '<div class="progress-bar"><div class="progress-fill '+fc+'" style="width:'+pct+'%"></div></div>';
+    list.appendChild(card);
+  });
+  var tot=document.getElementById('budget-total');
+  tot.style.display='flex';
+  var totalLeft=totalTarget-totalSpent;
+  document.getElementById('budget-spent').textContent='£'+totalSpent.toFixed(2);
+  document.getElementById('budget-left').textContent=(totalLeft>=0?'£':'−£')+Math.abs(totalLeft).toFixed(2);
+  document.getElementById('budget-target').textContent='£'+totalTarget.toFixed(2);
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='budget') loadBudgetFromSheet();
+  if(name==='recent') renderRecent();
+}
+
+function saveUrl(){
+  var url=document.getElementById('sheet-url').value.trim();
+  if(!url) return;
+  localStorage.setItem('mp_sheet_url',url);
+  document.getElementById('connection-status').innerHTML='<span class="connected-badge">✓ Saved</span>';
+  loadBudgetsFromSheet();
+}
+
+function testConnection(){
+  var url=document.getElementById('sheet-url').value.trim();
+  if(!url){document.getElementById('connection-status').textContent='Paste URL first.';return;}
+  document.getElementById('connection-status').textContent='Testing…';
+  fetch(url+'?action=budgets')
+    .then(function(r){return r.json();})
+    .then(function(){document.getElementById('connection-status').innerHTML='<span class="connected-badge">✓ Connected</span>';})
+    .catch(function(){document.getElementById('connection-status').textContent='Could not connect. Check the URL.';});
+}
+
+init();
+</script>
+</body>
+</html>
